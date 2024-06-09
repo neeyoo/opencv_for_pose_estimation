@@ -19,9 +19,12 @@ int main()
     }
 
     Mat cameraMatrix, distCoeffs;
-    fs["cameraMatrix"] >> cameraMatrix;
-    fs["distCoeffs"] >> distCoeffs;
+    fs["camera_matrix"] >> cameraMatrix;
+    fs["distortion_coefficients"] >> distCoeffs;
     fs.release();
+
+    std::cout << cameraMatrix << std::endl;
+    std::cout << distCoeffs << std::endl;
 
     // Open the default camera
     VideoCapture cap(0);
@@ -34,20 +37,22 @@ int main()
     }
 
     // Create a window to display the camera feed
-    namedWindow("Camera Feed", WINDOW_NORMAL);
-    resizeWindow("Camera Feed", 640, 480);
+    // namedWindow("Camera Feed", WINDOW_NORMAL);
+    // resizeWindow("Camera Feed", 640, 480);
 
     aruco::DetectorParameters detectorParams = cv::aruco::DetectorParameters();
     // Load the ArUco dictionary
     aruco::Dictionary dictionary = aruco::getPredefinedDictionary(aruco::DICT_4X4_1000);
     aruco::ArucoDetector detector(dictionary, detectorParams);
 
-    while (true)
+    while (cap.grab())
     {
         Mat frame;
 
         // Capture frame-by-frame
-        cap >> frame;
+        // cap >> frame;
+
+        cap.retrieve(frame);
 
         // Check if the frame is empty
         if (frame.empty())
@@ -68,7 +73,7 @@ int main()
 
         // Estimate pose of markers
         std::vector<Vec3d> rvecs, tvecs;
-        aruco::estimatePoseSingleMarkers(markerCorners, 0.015, cameraMatrix, distCoeffs, rvecs, tvecs);
+        aruco::estimatePoseSingleMarkers(markerCorners, 0.09, cameraMatrix, distCoeffs, rvecs, tvecs);
 
         // Draw markers if any are detected
         if (!markerIds.empty())
@@ -79,6 +84,8 @@ int main()
             for (size_t i = 0; i < markerIds.size(); ++i)
             {
                 drawFrameAxes(undistortedFrame, cameraMatrix, distCoeffs, rvecs[i], tvecs[i], 0.1);
+                std::cout << "Translational Vec: " << tvecs[i] << std::endl;
+                std::cout << "Rotational Vec: " << rvecs[i] << std::endl;
             }
         }
 
@@ -86,7 +93,7 @@ int main()
         imshow("Camera Feed", undistortedFrame);
 
         // Check for the escape key press to exit
-        int key = waitKey(10);
+        int key = waitKey(100);
         if (key == 27)
         { // ASCII code for escape key
             break;

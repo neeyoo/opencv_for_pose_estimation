@@ -5,16 +5,18 @@
 
 using namespace cv;
 
-int main() {
+int main()
+{
     // Create the "photos" subfolder if it doesn't exist
-    const char* photosFolder = "photos";
+    const char *photosFolder = "photos";
     mkdir(photosFolder, 0777);
 
     // Open the default camera
     VideoCapture cap(0);
-    
+
     // Check if camera opened successfully
-    if (!cap.isOpened()) {
+    if (!cap.isOpened())
+    {
         std::cerr << "Error: Unable to open camera" << std::endl;
         return -1;
     }
@@ -24,37 +26,40 @@ int main() {
     resizeWindow("Camera Feed", 640, 480);
 
     // Creating vector to store vectors of 3D points for each checkerboard image
-    std::vector<std::vector<cv::Point3f> > objpoints;
+    std::vector<std::vector<cv::Point3f>> objpoints;
 
     std::vector<std::vector<cv::Point2f>> imagePoints;
-    Size boardSize(7, 10);  // Change the board size according to your calibration pattern
+    Size boardSize(7, 10); // Change the board size according to your calibration pattern
 
     // Defining the world coordinates for 3D points
     std::vector<cv::Point3f> objp;
-    for(int i{0}; i<boardSize.height; i++)
+    for (int i{0}; i < boardSize.height; i++)
     {
-        for(int j{0}; j<boardSize.width; j++)
-        objp.push_back(cv::Point3f(j,i,0));
+        for (int j{0}; j < boardSize.width; j++)
+            objp.push_back(cv::Point3f(j, i, 0));
     }
 
-    while (true) {
+    while (true)
+    {
         Mat frame;
-        
+
         // Capture frame-by-frame
         cap >> frame;
-        
+
         // Check if the frame is empty
-        if (frame.empty()) {
+        if (frame.empty())
+        {
             std::cerr << "Error: Unable to capture frame" << std::endl;
             break;
         }
-        
+
         // Display the resulting frame
         imshow("Camera Feed", frame);
-        
+
         // Check for the spacebar press to capture calibration images
         int key = waitKey(10);
-        if (key == 32) { // ASCII code for spacebar
+        if (key == 32)
+        { // ASCII code for spacebar
             // Convert frame to grayscale
             Mat gray;
             cvtColor(frame, gray, COLOR_BGR2GRAY);
@@ -62,9 +67,10 @@ int main() {
             // Find chessboard corners
             std::vector<cv::Point2f> corners;
             bool found = findChessboardCorners(gray, boardSize, corners,
-                                                CALIB_CB_ADAPTIVE_THRESH | CALIB_CB_NORMALIZE_IMAGE);
+                                               CALIB_CB_ADAPTIVE_THRESH | CALIB_CB_NORMALIZE_IMAGE);
 
-            if (found) {
+            if (found)
+            {
                 // Refine corner locations
                 cornerSubPix(gray, corners, Size(11, 11), Size(-1, -1),
                              TermCriteria(TermCriteria::EPS + TermCriteria::COUNT, 30, 0.1));
@@ -82,28 +88,34 @@ int main() {
                 std::cout << "Calibration image captured (" << imagePoints.size() << " / 20)" << std::endl;
 
                 // Stop capturing images after 20 images
-                if (imagePoints.size() >= 20) {
+                if (imagePoints.size() >= 20)
+                {
                     break;
                 }
-            } else {
+            }
+            else
+            {
                 std::cerr << "Chessboard corners not found in the image" << std::endl;
             }
-        } else if (key == 27) { // ASCII code for escape key
+        }
+        else if (key == 27)
+        { // ASCII code for escape key
             break;
         }
     }
-    
+
     // Release the camera
     cap.release();
-    
+
     // Close all OpenCV windows
     destroyAllWindows();
 
     // Perform camera calibration if enough images were captured
-    if (imagePoints.size() >= 20) {
+    if (imagePoints.size() >= 20)
+    {
         std::cout << "Performing camera calibration..." << std::endl;
 
-        Size imageSize = Size(640, 480);  // Adjust the image size according to your camera
+        Size imageSize = Size(640, 480); // Adjust the image size according to your camera
         Mat cameraMatrix, distCoeffs;
         std::vector<Mat> rvecs, tvecs;
 
@@ -117,7 +129,9 @@ int main() {
         fs.release();
 
         std::cout << "Calibration successful. RMS reprojection error: " << rms << std::endl;
-    } else {
+    }
+    else
+    {
         std::cerr << "Insufficient calibration images captured. At least 20 images are required." << std::endl;
     }
 
